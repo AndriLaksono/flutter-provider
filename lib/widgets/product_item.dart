@@ -52,6 +52,19 @@ class ProductItem extends StatelessWidget {
             ),
             onPressed: () {
               cart.addItem(product.id, product.title, product.price);
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Testing lur'),
+                  duration: Duration(milliseconds: 1000),
+                  action: SnackBarAction(
+                    label: 'UNDO', 
+                    onPressed: () {
+                      cart.removeSingleItem(product.id);
+                    },
+                  ),
+                )
+              );
             },
             color: Theme.of(context).accentColor,
           ),
