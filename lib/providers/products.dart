@@ -43,7 +43,10 @@ class Products with ChangeNotifier {
     // ),
   ];
   
-  // var _showFavorites = false;
+  final String authToken;
+  final String userID;
+
+  Products(this.authToken, this.userID, this._items);
 
   List<Product> get items {
     // if (_showFavorites) {
@@ -60,14 +63,22 @@ class Products with ChangeNotifier {
     return _items.firstWhere((element) => element.id == id);
   }
 
-  Future<void> fetchSetProducts() async {
+  Future<void> fetchSetProducts([bool filterByUser = false]) async {
     try {
-      var uri = Uri.https(baseUrl, '/products.json');
+      final queryParam = filterByUser ? {'auth': authToken, 'orderBy': '\"creatorId\"', 'equalTo': '\"$userID\"' } 
+                                      : {'auth': authToken};
+      final uri = Uri.https(baseUrl, '/products.json', queryParam);
       final response = await http.get(uri);
       final resData = json.decode(response.body) as Map<String, dynamic>;
       if (resData == null) {
         return;
       }
+      final uriFav = Uri.https(baseUrl, '/userFavorites/$userID.json', {
+        'auth': authToken, 'orderBy': 'creatorId', 'equalTo': userID
+      });
+      final resFav = await http.get(uriFav);
+      final resFavData = json.decode(resFav.body);
+      
       final List<Product> loadedProducts = [];
       resData.forEach((prodId, prodData) {
         loadedProducts.add(Product(
@@ -75,7 +86,7 @@ class Products with ChangeNotifier {
           title: prodData['title'],
           description: prodData['description'],
           price: prodData['price'],
-          isFavorite: prodData['isFavorite'],
+          isFavorite: resFavData == null ? false : (resFavData[prodId] ?? false),
           imageUrl: prodData['imageUrl']));
       });
       _items = loadedProducts;
@@ -87,13 +98,13 @@ class Products with ChangeNotifier {
 
   Future<bool> addProduct(Product product) async {
     try {  
-      var uri = Uri.https(baseUrl, '/products.json');
-      var result = await http.post(uri, body: json.encode({
+      final uri = Uri.https(baseUrl, '/products.json', {'auth': authToken});
+      final result = await http.post(uri, body: json.encode({
         'title': product.title,
         'description': product.description,
         'price': product.price,
         'imageUrl': product.imageUrl,
-        'isFavorite': product.isFavorite,
+        'creatorId': userID
       }));
 
       final newProduct = Product(
@@ -115,7 +126,7 @@ class Products with ChangeNotifier {
     try {
       final prodIndex = _items.indexWhere((element) => element.id == id);
       if (prodIndex>= 0) {
-        var uri = Uri.https(baseUrl, '/products/$id.json');
+        var uri = Uri.https(baseUrl, '/products/$id.json', {'auth': authToken});
         await http.patch(uri, body: json.encode({
           'title': newProduct.title,
           'description': newProduct.description,
@@ -138,7 +149,7 @@ class Products with ChangeNotifier {
     _items.removeAt(existingProductIndex);
     notifyListeners();
 
-    final uri = Uri.https(baseUrl, '/products/$id.json');
+    final uri = Uri.https(baseUrl, '/products/$id.json', {'auth': authToken});
     final response = await http.delete(uri);
     if(response.statusCode >= 400) {
       _items.insert(existingProductIndex, existingProduct);

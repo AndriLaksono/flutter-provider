@@ -2,8 +2,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
-import '../models/http_exception.dart';
-
 var baseUrl = 'flutter-purple-default-rtdb.firebaseio.com';
 
 class Product with ChangeNotifier {
@@ -28,14 +26,14 @@ class Product with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> toggleFavoriteStatus() async {
+  Future<void> toggleFavoriteStatus(String authToken, String userID) async {
     final oldStatus = isFavorite;
     isFavorite = !isFavorite;
     notifyListeners();
 
-    final url = Uri.https(baseUrl, '/products/$id.json');
+    final url = Uri.https(baseUrl, '/userFavorites/$userID/$id.json', {'auth': authToken});
     try {
-      final res = await http.patch(url, body: json.encode({
+      final res = await http.put(url, body: json.encode({
         'isFavorite': isFavorite
       }));
       if (res.statusCode >= 400) {

@@ -31,11 +31,11 @@ class _ProductsOverviewScreenState extends State<ProductsOverviewScreen> {
   @override
   void didChangeDependencies() {
     if (_isInit) {
-      setState(() {
+      if (mounted) setState(() {
         _isLoading = true;
       });
       Provider.of<Products>(context, listen: false).fetchSetProducts().then((_) {
-        setState(() {
+      if(mounted) setState(() {
           _isLoading = false;
         });
       });

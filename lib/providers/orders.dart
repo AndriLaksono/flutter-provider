@@ -27,8 +27,14 @@ class Orders with ChangeNotifier {
     return [..._orders];
   }
 
+  final authToken;
+  final userID;
+
+  Orders(this.authToken, this.userID, this._orders);
+
   Future<void> fetchAndSetOrders() async {
-    var uri = Uri.https(baseUrl, '/orders.json');
+    print(userID);
+    var uri = Uri.https(baseUrl, '/orders/$userID.json', { 'auth': authToken });
     final res = await http.get(uri);
     final List<OrderItem> loadedOrders = [];
     final resData = json.decode(res.body) as Map<String, dynamic>;
@@ -51,7 +57,7 @@ class Orders with ChangeNotifier {
   }
 
   Future<void> addOrder(List<CartItem> cartProducts, double total) async {
-    var uri = Uri.https(baseUrl, '/orders.json');
+    var uri = Uri.https(baseUrl, '/orders/$userID.json', { 'auth': authToken });
     final timestamp = DateTime.now();
     final res = await http.post(uri, body: json.encode({
       'amount': total,
